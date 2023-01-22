@@ -20,14 +20,19 @@ public:
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
 
+	
+
 	DECLARE_MESSAGE_MAP()
 public:
 	CListCtrl ModuleList;
-	void InitList();
+	void ListModule(WCHAR* Text, int sort);
 	QWORD GetModuleBase();
 	QWORD GetModuleSize();
 	CString GetModuleName();
 	virtual BOOL OnInitDialog();
 	afx_msg void OnBnClickedButton2();
 	CButton HexDump;
+	afx_msg void OnBnClickedButton3();
+	CComboBox SortItem;
+	afx_msg void OnEnChangeEdit1();
 };

@@ -7,6 +7,7 @@
 #include "Xprocess.h"
 #include "XprocessDlg.h"
 #include "afxdialogex.h"
+#include "MyProcess.h"
 #include <TlHelp32.h>
 #include <Windows.h>
 #include <process.h>
@@ -194,20 +195,6 @@ int SortByPATH(ProcessItem a, ProcessItem b) {
 
 void XMessageBox(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType) {
 	MessageBox(hWnd, lpText, lpCaption, uType);
-}
-
-BOOL IsPrefix(WCHAR* Text, WCHAR* modstr) {
-	WCHAR* s1 = Text, *s2 = modstr;
-	int len=lstrlenW(modstr);
-	char s[10];
-	if (len == 0)return 1;
-
-	for (int i = 0; i < len; i++) {
-		if (tolower(*s1) != tolower(*s2))return 0;
-		s1++;
-		s2++;
-	}
-	return 1;
 }
 
 void CXprocessDlg::ListProcess(WCHAR * Text,int sort)

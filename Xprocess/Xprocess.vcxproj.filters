@@ -39,6 +39,9 @@
     <ClInclude Include="XModuleDlg.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MyProcess.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Xprocess.cpp">
@@ -54,6 +57,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="XModuleDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MyProcess.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
