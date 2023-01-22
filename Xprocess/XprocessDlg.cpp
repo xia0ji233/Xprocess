@@ -14,6 +14,7 @@
 #include <vector>
 #include <algorithm>
 #include "DLLInject.h"
+#include "XModuleDlg.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -120,7 +121,9 @@ BOOL CXprocessDlg::OnInitDialog()
 	ProcessList.InsertColumn(0, L"进程名", 0, 130);
 	ProcessList.InsertColumn(1, L"进程ID", 0, 80);
 	ProcessList.InsertColumn(2, L"进程路径", 0, 400);
+	SortItem.SetCurSel(0);
 	ListProcess(L"",0);
+
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -382,7 +385,11 @@ inject:
 void CXprocessDlg::OnBnClickedButton1()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	//MessageBox(NULL, DLLPATH);
+	int PID = GetSelProcessId();
+	XModuleDlg* Dlg = new XModuleDlg(PID);
+	Dlg->DoModal();
+	delete Dlg;
+
 }
 
 
