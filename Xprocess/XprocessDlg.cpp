@@ -79,6 +79,8 @@ BEGIN_MESSAGE_MAP(CXprocessDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON4, &CXprocessDlg::OnBnClickedButton4)
 	ON_BN_CLICKED(IDC_BUTTON2, &CXprocessDlg::OnBnClickedButton2)
 	ON_BN_CLICKED(IDC_BUTTON1, &CXprocessDlg::OnBnClickedButton1)
+	ON_NOTIFY(NM_RCLICK, IDC_LIST4, &CXprocessDlg::OnRclickList4)
+	ON_COMMAND(ID_0, &CXprocessDlg::KillProcess)
 END_MESSAGE_MAP()
 
 
@@ -99,7 +101,7 @@ BOOL CXprocessDlg::OnInitDialog()
 	{
 		BOOL bNameValid;
 		CString strAboutMenu;
-		bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
+		//bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
 		ASSERT(bNameValid);
 		if (!strAboutMenu.IsEmpty())
 		{
@@ -185,6 +187,10 @@ int SortByName(ProcessItem a, ProcessItem b) {
 }
 int SortByPATH(ProcessItem a, ProcessItem b) {
 	return StrCmpCW(a.PATH, b.PATH) < 0;
+}
+
+void XMessageBox(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType) {
+	MessageBox(hWnd, lpText, lpCaption, uType);
 }
 
 BOOL IsPrefix(WCHAR* Text, WCHAR* modstr) {
@@ -276,13 +282,7 @@ void CXprocessDlg::OnEnChangeEdit1()
 void CXprocessDlg::OnBnClickedButton4()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	CString s;
-	GetDlgItemTextW(IDC_EDIT1, s);
-	const size_t newsizew = (s.GetLength() + 1) * 2;
-	WCHAR* n2stringw = new wchar_t[newsizew];
-	wcscpy_s(n2stringw, newsizew, s);
-	int index = SortItem.GetCurSel();
-	ListProcess(n2stringw, index);
+	OnEnChangeEdit1();
 }
 
 DLLInject* DLLdlg = NULL;
@@ -329,6 +329,18 @@ process:
 	return;
 }
 
+int CXprocessDlg::GetSelProcessId() {
+	int i = ProcessList.GetSelectionMark();//获得选中行的行数
+	CString s = ProcessList.GetItemText(i, 1);//(行，列)
+	return _ttoi(s);
+}
+
+CString CXprocessDlg::GetSelName() {
+	int i = ProcessList.GetSelectionMark();//获得选中行的行数
+	CString s = ProcessList.GetItemText(i, 0);//(行，列)
+	return s;
+}
+
 void CXprocessDlg::OnBnClickedButton2()
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -355,10 +367,9 @@ void CXprocessDlg::OnBnClickedButton2()
 	return;
 inject:
 	if (InjectType & 0x80000000) {
-		int i = ProcessList.GetSelectionMark();//获得选中行的行数
-		CString s = ProcessList.GetItemText(i, 1);//(行，列)
-		DWORD dwProcessId = _ttoi(s);
-		s = ProcessList.GetItemText(i, 0);
+		int i = ProcessList.GetSelectionMark();
+		DWORD dwProcessId = GetSelProcessId();
+		CString s = ProcessList.GetItemText(i, 0);
 		const size_t newsizew = (s.GetLength() + 1) * 2;
 		WCHAR* FileName = new wchar_t[newsizew];
 		wcscpy_s(FileName, newsizew, s);
@@ -372,4 +383,46 @@ void CXprocessDlg::OnBnClickedButton1()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	//MessageBox(NULL, DLLPATH);
+}
+
+
+void CXprocessDlg::OnRclickList4(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	// TODO: 在此添加控件通知处理程序代码
+	POINT pt = {};
+	GetCursorPos(&pt); 
+	HMENU hMenu = LoadMenu(AfxGetApp()->m_hInstance, MAKEINTRESOURCE(IDR_MENU1)); 
+	hMenu = GetSubMenu(hMenu, 0); 
+	TrackPopupMenu(hMenu, TPM_LEFTALIGN, pt.x, pt.y, 0, m_hWnd, NULL);
+	*pResult = 0;
+}
+
+
+
+void CXprocessDlg::KillProcess()
+{
+	// TODO: 在此添加命令处理程序代码
+	int PID = GetSelProcessId();
+	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PID);
+
+	CString s = GetSelName();
+	const size_t newsizew = (s.GetLength() + 1) * 2;
+	WCHAR* FileName = new wchar_t[newsizew];
+	wcscpy_s(FileName, newsizew, s);
+
+	if (hProcess == NULL) {
+		XMessageBox(NULL, L"进程句柄获取失败", FileName, MB_OK);
+		goto end;
+	}
+	BOOL ret=TerminateProcess(hProcess, 9);
+	if (ret) {
+		XMessageBox(NULL, L"进程结束成功", FileName, MB_OK);
+	}
+	else {
+		XMessageBox(NULL, L"进程结束失败", FileName, MB_OK);
+	}
+end:
+	OnEnChangeEdit1();
+	delete FileName;
 }

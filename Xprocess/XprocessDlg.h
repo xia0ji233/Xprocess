@@ -38,7 +38,11 @@ public:
 	CEdit SearchText;
 	CComboBox SortItem;
 	afx_msg void OnBnClickedButton4();
-	afx_msg void OnBnClickedButton2();
+	afx_msg int GetSelProcessId();
+	afx_msg CString GetSelName();
+	void OnBnClickedButton2();
 	afx_msg void OnBnClickedButton1();
 	CButton Lock;
+	afx_msg void OnRclickList4(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void KillProcess();
 };
