@@ -13,7 +13,7 @@ class DLLDumpDlg : public CDialogEx
 	DECLARE_DYNAMIC(DLLDumpDlg)
 
 public:
-	DLLDumpDlg(int* Option,CWnd* pParent = nullptr);   // 标准构造函数
+	DLLDumpDlg(int* Option,WCHAR *PATH,CWnd* pParent = nullptr);   // 标准构造函数
 	virtual ~DLLDumpDlg();
 
 // 对话框数据
@@ -31,6 +31,8 @@ public:
 	CButton ExecuteCheck;
 	CButton RememberMe;
 	int* Option;
+	WCHAR* PATH;
 	afx_msg void OnBnClickedButton1();
 	CButton ReadOnly;
+	afx_msg void OnBnClickedButton2();
 };

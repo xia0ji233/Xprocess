@@ -160,12 +160,13 @@ BOOL XModuleDlg::OnInitDialog()
 }
 
 int DumpOption=0x00000000;
+WCHAR PATH[260];
 
 void XModuleDlg::OnBnClickedButton2()
 {
     // TODO: 在此添加控件通知处理程序代码
     if (REMEMBERME & ~DumpOption) {
-        DLLDumpDlg* Dlg = new DLLDumpDlg(&DumpOption);
+        DLLDumpDlg* Dlg = new DLLDumpDlg(&DumpOption,PATH);
         Dlg->DoModal();
         if (DUMP & ~DumpOption) {
             return;
@@ -177,7 +178,8 @@ void XModuleDlg::OnBnClickedButton2()
     const size_t newsizew = (ModuleName.GetLength() + 1) * 2;
     WCHAR* tmp = new wchar_t[newsizew];
     wcscpy_s(tmp, newsizew, ModuleName);
-    wsprintf(FileName, L"%d-%s.dump",this->PID,tmp);//PID-MODULENAME.dump的命名
+    wsprintf(FileName, L"%s%d-%s.dump",PATH,this->PID,tmp);//PID-MODULENAME.dump的命名
+
     FILE* fd = _wfopen(FileName, L"wb+");
     //MessageBoxExW(NULL, FileName, ModuleName, MB_OK, 0);
     QWORD Base = GetModuleBase();
@@ -224,7 +226,9 @@ void XModuleDlg::OnBnClickedButton2()
     DumpOption &= ~DUMP;
     delete tmp;
     fclose(fd);
-    MessageBoxExW(NULL, L"转储完毕", ModuleName, MB_OK, 0);
+    WCHAR Message[350];
+    wsprintf(Message, L"文件已转储到 %s 中", FileName);
+    MessageBoxExW(NULL, Message, ModuleName, MB_OK, 0);
 }
 
 
