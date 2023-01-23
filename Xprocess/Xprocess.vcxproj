@@ -183,6 +183,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="DLLDumpDlg.h" />
     <ClInclude Include="DLLInject.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="MyProcess.h" />
@@ -194,6 +195,7 @@
     <ClInclude Include="XprocessDlg.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DLLDumpDlg.cpp" />
     <ClCompile Include="DLLInject.cpp" />
     <ClCompile Include="MyProcess.cpp" />
     <ClCompile Include="pch.cpp">

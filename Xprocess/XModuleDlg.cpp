@@ -6,9 +6,11 @@
 #include "afxdialogex.h"
 #include "XModuleDlg.h"
 #include "MyProcess.h"
+#include "DLLDumpDlg.h"
 #include <TlHelp32.h>
 #include <vector>
 #include <algorithm>
+
 // XModuleDlg 对话框
 
 IMPLEMENT_DYNAMIC(XModuleDlg, CDialogEx)
@@ -157,11 +159,19 @@ BOOL XModuleDlg::OnInitDialog()
 	// 异常: OCX 属性页应返回 FALSE
 }
 
-
+int DumpOption=0x00000000;
 
 void XModuleDlg::OnBnClickedButton2()
 {
     // TODO: 在此添加控件通知处理程序代码
+    if (REMEMBERME & ~DumpOption) {
+        DLLDumpDlg* Dlg = new DLLDumpDlg(&DumpOption);
+        Dlg->DoModal();
+        if (DUMP & ~DumpOption) {
+            return;
+        }
+    }
+
     CString ModuleName = GetModuleName();
     WCHAR FileName[260];
     const size_t newsizew = (ModuleName.GetLength() + 1) * 2;
@@ -176,13 +186,29 @@ void XModuleDlg::OnBnClickedButton2()
     BYTE ENTER = 10;
     SIZE_T ReadSize;
     HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, this->PID);
-    if (HexDump.GetCheck()) {//十六进制转储
-        char hex[5];
-        for (QWORD i = Base; i < Base + Size; i+=0x1000) {
-            ReadProcessMemory(hProcess, (LPVOID)i, &buf, 0x1000, &ReadSize);
+    MEMORY_BASIC_INFORMATION MemInfo;
+     char hex[5];
+    for (QWORD i = Base; i < Base + Size; i+=0x1000) {
+        VirtualQueryEx(hProcess, (LPCVOID)i, &MemInfo, sizeof(MemInfo));
+        if (MemInfo.State != MEM_COMMIT) {
+            continue;
+        }
+        if (MemInfo.Protect == PAGE_EXECUTE_READ && (DumpOption & EXECUTE)) {
+            goto dump;
+        }
+        if (MemInfo.Protect == PAGE_READWRITE && (DumpOption & WRITE)) {
+            goto dump;
+        }
+        if (MemInfo.Protect == PAGE_READONLY && (DumpOption & READONLY)) {
+            goto dump;
+        }
+        continue; 
+    dump:
+        ReadProcessMemory(hProcess, (LPVOID)i, &buf, 0x1000, &ReadSize);
+        if (HexDump.GetCheck()) {//十六进制转储
             for (QWORD j = 0; j < 0x1000; j++) {
                 if (j % 16 == 0) {
-                    fprintf(fd,"Offset:0x%p: ", i + j - Base);
+                    fprintf(fd, "Offset:0x%p: ", i + j - Base);
                 }
                 sprintf(hex, "%02x ", buf[j]);
                 fwrite(hex, 1, 3, fd);
@@ -191,13 +217,11 @@ void XModuleDlg::OnBnClickedButton2()
                 }
             }
         }
-    }
-    else {
-        for (QWORD i = Base; i < Base + Size; i+=0x1000) {
-            ReadProcessMemory(hProcess, (LPVOID)i, buf, 0x1000, &ReadSize);
+        else {
             fwrite(buf, 1, 0x1000, fd);
         }
     }
+    DumpOption &= ~DUMP;
     delete tmp;
     fclose(fd);
     MessageBoxExW(NULL, L"转储完毕", ModuleName, MB_OK, 0);
