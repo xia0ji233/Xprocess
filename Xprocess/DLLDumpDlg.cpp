@@ -29,6 +29,7 @@ void DLLDumpDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_CHECK2, ExecuteCheck);
 	DDX_Control(pDX, IDC_CHECK3, RememberMe);
 	DDX_Control(pDX, IDC_CHECK4, ReadOnly);
+	DDX_Control(pDX, IDC_CHECK5, WriteCopyCheck);
 }
 
 
@@ -67,6 +68,9 @@ void DLLDumpDlg::OnBnClickedButton1()
 	}
 	if (ReadOnly.GetCheck()) {
 		Option |= READONLY;
+	}
+	if (WriteCopyCheck.GetCheck()) {
+		Option |= WRITECOPY;
 	}
 	if (RememberMe.GetCheck()) {
 		int ret=MessageBoxEx(NULL, L"勾选了记住选项，直到本次运行结束前您都不可以更改dump选项，确定吗？",L"提示", MB_YESNO,0);

@@ -3,6 +3,7 @@
 #define WRITE 0x1
 #define EXECUTE 0x2
 #define READONLY 0x4
+#define WRITECOPY 0x8
 #define REMEMBERME 0x40000000
 #define DUMP 0x80000000
 
@@ -35,4 +36,5 @@ public:
 	afx_msg void OnBnClickedButton1();
 	CButton ReadOnly;
 	afx_msg void OnBnClickedButton2();
+	CButton WriteCopyCheck;
 };

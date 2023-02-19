@@ -204,6 +204,9 @@ void XModuleDlg::OnBnClickedButton2()
         if (MemInfo.Protect == PAGE_READONLY && (DumpOption & READONLY)) {
             goto dump;
         }
+        if (MemInfo.Protect == PAGE_WRITECOPY && (DumpOption & WRITECOPY)) {
+            goto dump;
+        }
         continue; 
     dump:
         ReadProcessMemory(hProcess, (LPVOID)i, &buf, 0x1000, &ReadSize);
@@ -238,7 +241,7 @@ void XModuleDlg::OnEnChangeEdit1()
     CString s;
     GetDlgItemTextW(IDC_EDIT1, s);
     const size_t newsizew = (s.GetLength() + 1) * 2;
-    WCHAR* n2stringw = new wchar_t[newsizew];
+    WCHAR* n2stringw     = new wchar_t[newsizew];
     wcscpy_s(n2stringw, newsizew, s);
     int index = SortItem.GetCurSel();
     ListModule(n2stringw, index);

@@ -365,7 +365,7 @@ inject:
 		wcscpy_s(FileName, newsizew, s);
 		InjectModule(DLLPATH, dwProcessId, FileName);
 	}
-	InjectType &= 0x7fffffff;
+	InjectType &= 0x7fffffff;//unset inject bit
 }
 
 
