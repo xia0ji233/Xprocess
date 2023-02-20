@@ -241,6 +241,7 @@ void CXprocessDlg::ListProcess(WCHAR * Text,int sort)
 		break;
 	case 2:
 		std::sort(v.begin(), v.end(), SortByPATH);
+		break;
 	default:
 		std::sort(v.begin(), v.end(), SortByName);
 	}
