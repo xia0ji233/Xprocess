@@ -279,6 +279,103 @@ void CXprocessDlg::OnBnClickedButton4()
 DLLInject* DLLdlg = NULL;
 WCHAR DLLPATH[260];
 int InjectType;//最高位表示执行注入。
+typedef BOOL(WINAPI* LPFN_ISWOW64PROCESS)(HANDLE, PBOOL);
+
+BOOL IsWow64(HANDLE hProcess) {
+    BOOL bIsWow64 = FALSE;
+    LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(GetModuleHandle(TEXT("kernel32")), "IsWow64Process");
+    if (fnIsWow64Process) {
+        fnIsWow64Process(hProcess, &bIsWow64);
+    }
+    return bIsWow64;
+}
+
+FARPROC GetLoadLibraryW(int dwProcessId) {
+	HANDLE ths = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwProcessId);
+	if (ths != INVALID_HANDLE_VALUE)
+	{
+		MODULEENTRY32 me;
+		me.dwSize = sizeof(me);
+		if (Module32First(ths, &me))
+		{
+			do
+			{
+				if (!_wcsicmp(L"kernel32.dll", me.szModule)) {
+					return GetProcAddress(me.hModule, "LoadLibraryW");					
+				}
+			} while (Module32Next(ths, &me));
+
+		}
+		CloseHandle(ths);
+	}
+	return NULL;
+}
+
+FARPROC GetRemoteProcAddress(HANDLE hProcess, HMODULE hModule, LPCSTR lpProcName) {
+    BYTE buffer[4096];
+    SIZE_T bytesRead;
+	
+    if (!ReadProcessMemory(hProcess, hModule, buffer, sizeof(buffer), &bytesRead)) {
+        return NULL;
+    }
+
+    PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)buffer;
+    PIMAGE_NT_HEADERS32 ntHeaders = (PIMAGE_NT_HEADERS32)((BYTE*)buffer + dosHeader->e_lfanew);
+	DWORD RVAForExpDir = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+
+	if (!ReadProcessMemory(hProcess, (BYTE*)hModule + RVAForExpDir, buffer, sizeof(IMAGE_EXPORT_DIRECTORY), &bytesRead)) {
+		return NULL;
+	}
+
+	PIMAGE_EXPORT_DIRECTORY exportDir = (PIMAGE_EXPORT_DIRECTORY)buffer ;
+    DWORD funcAddr = (DWORD)( exportDir->AddressOfFunctions);
+    DWORD nameAddr = (DWORD)( exportDir->AddressOfNames);
+    DWORD nameOrdAddr = (DWORD)( exportDir->AddressOfNameOrdinals);
+    for (DWORD i = 0; i < exportDir->NumberOfNames; i++) {
+        char name[256];
+		DWORD TrueNameAddr;
+		WORD TrueOrd;
+		DWORD TrueFuncAddr;
+		if (!ReadProcessMemory(hProcess, (BYTE*)hModule + nameAddr + sizeof(DWORD)*i, &TrueNameAddr, sizeof(TrueNameAddr), &bytesRead)) {
+			return NULL;
+		}
+        if (!ReadProcessMemory(hProcess, (LPCVOID)((BYTE*)hModule + (DWORD)TrueNameAddr), name, sizeof(name), &bytesRead)) {
+            return NULL;
+        }
+        if (stricmp(name, lpProcName) == 0) {
+			DWORD LoadLibraryAddr = 0;
+			if (!ReadProcessMemory(hProcess, (BYTE*)hModule + nameOrdAddr + sizeof(WORD)*i, &TrueOrd, sizeof(TrueOrd), &bytesRead)) {
+				return NULL;
+			}
+
+			if (!ReadProcessMemory(hProcess, (BYTE*)hModule + funcAddr + sizeof(DWORD)*(TrueOrd), &TrueFuncAddr, sizeof(TrueFuncAddr), &bytesRead)) {
+				return NULL;
+			}
+			return (FARPROC)(TrueFuncAddr + (BYTE*)hModule);
+        }
+    }
+
+    return NULL;
+}
+
+FARPROC GetLoadLibraryW(HANDLE hProcess) {
+	HMODULE hMods[1024];
+    DWORD cbNeeded;
+    unsigned int i;
+	FARPROC ret = NULL;
+    if (EnumProcessModulesEx(hProcess, hMods, sizeof(hMods), &cbNeeded, LIST_MODULES_32BIT)) {
+        for (i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
+            TCHAR szModName[MAX_PATH];
+            if (GetModuleBaseName(hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR))) {
+				//MessageBox(NULL, szModName, L"warn", MB_OK);
+				if (!_wcsicmp(L"kernel32.dll", szModName)) {
+					ret = GetRemoteProcAddress(hProcess, hMods[i], "LoadLibraryW");
+				}
+            }
+        }
+    }
+	return ret;
+}
 
 void InjectModule(WCHAR* szPath,int dwProcessId, WCHAR* FileName)
 {
@@ -298,7 +395,15 @@ void InjectModule(WCHAR* szPath,int dwProcessId, WCHAR* FileName)
 		MessageBox(NULL, L"写失败", FileName, MB_OK);
 		goto free;
 	}
-	HANDLE hThread = CreateRemoteThread(hProcess, NULL, NULL, (LPTHREAD_START_ROUTINE)LoadLibraryW, lpAddress, NULL, NULL);
+
+	FARPROC LoadLibraryAddr = NULL;
+	if (IsWow64(hProcess)) {
+		LoadLibraryAddr = GetLoadLibraryW(hProcess);
+	}
+	else {
+		LoadLibraryAddr = GetLoadLibraryW(dwProcessId);
+	}
+	HANDLE hThread = CreateRemoteThread(hProcess, NULL, NULL, (LPTHREAD_START_ROUTINE)LoadLibraryAddr, lpAddress, NULL, NULL);
 	if (!hThread) {
 		MessageBox(NULL, L"远程线程创建失败", FileName, MB_OK);
 		goto thread;
