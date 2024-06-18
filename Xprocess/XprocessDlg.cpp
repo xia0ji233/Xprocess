@@ -8,6 +8,7 @@
 #include "XprocessDlg.h"
 #include "afxdialogex.h"
 #include "MyProcess.h"
+#include "Utils.h"
 #include <TlHelp32.h>
 #include <Windows.h>
 #include <process.h>
@@ -101,7 +102,7 @@ BOOL CXprocessDlg::OnInitDialog()
 	CMenu* pSysMenu = GetSystemMenu(FALSE);
 	if (pSysMenu != nullptr)
 	{
-		BOOL bNameValid;
+		BOOL bNameValid = 1;
 		CString strAboutMenu;
 		//bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
 		ASSERT(bNameValid);
@@ -279,16 +280,7 @@ void CXprocessDlg::OnBnClickedButton4()
 DLLInject* DLLdlg = NULL;
 WCHAR DLLPATH[260];
 int InjectType;//最高位表示执行注入。
-typedef BOOL(WINAPI* LPFN_ISWOW64PROCESS)(HANDLE, PBOOL);
 
-BOOL IsWow64(HANDLE hProcess) {
-    BOOL bIsWow64 = FALSE;
-    LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(GetModuleHandle(TEXT("kernel32")), "IsWow64Process");
-    if (fnIsWow64Process) {
-        fnIsWow64Process(hProcess, &bIsWow64);
-    }
-    return bIsWow64;
-}
 
 FARPROC GetLoadLibraryW(int dwProcessId) {
 	HANDLE ths = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwProcessId);

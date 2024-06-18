@@ -7,6 +7,7 @@
 #include "XModuleDlg.h"
 #include "MyProcess.h"
 #include "DLLDumpDlg.h"
+#include "Utils.h"
 #include <TlHelp32.h>
 #include <vector>
 #include <algorithm>
@@ -68,10 +69,17 @@ int SortByPATH(ModuleItem a, ModuleItem b) {
 void XModuleDlg::ListModule(WCHAR *Text,int sort) {
     ModuleList.DeleteAllItems();
     std::vector<ModuleItem>v;
-    HANDLE ths = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, this->PID);
+    HANDLE ths;
     WCHAR Base[260];
     WCHAR Size[260];
     ULONG INDEX = 0;
+    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, this->PID);
+    if (!IsWow64(hProcess)) {
+        ths = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, this->PID);
+    }
+    else{
+        ths = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE32|TH32CS_SNAPMODULE, this->PID);
+    }
     if (ths != INVALID_HANDLE_VALUE)
     {
         MODULEENTRY32 me;
@@ -96,31 +104,34 @@ void XModuleDlg::ListModule(WCHAR *Text,int sort) {
 
         }
         CloseHandle(ths);
-        switch (sort) {
-        case 0:
-            std::sort(v.begin(), v.end(), SortByName);
-            break;
-        case 1:
-            std::sort(v.begin(), v.end(), SortByBase);
-            break;
-        case 2:
-            std::sort(v.begin(), v.end(), SortBySize);
-            break;
-        default:
-            std::sort(v.begin(), v.end(), SortByPATH);
-            break;
-        }
-
-        for (auto item : v) {
-            wsprintf(Base, L"%p", item.Base);
-            wsprintf(Size, L"%p", item.Size);
-            ModuleList.InsertItem(INDEX, item.Name);
-            ModuleList.SetItemText(INDEX, 1, Base);
-            ModuleList.SetItemText(INDEX, 2, Size);
-            ModuleList.SetItemText(INDEX, 3, item.PATH);
-            INDEX++;
-        }
     }
+
+    switch (sort) {
+    case 0:
+        std::sort(v.begin(), v.end(), SortByName);
+        break;
+    case 1:
+        std::sort(v.begin(), v.end(), SortByBase);
+        break;
+    case 2:
+        std::sort(v.begin(), v.end(), SortBySize);
+        break;
+    default:
+        std::sort(v.begin(), v.end(), SortByPATH);
+        break;
+    }
+
+    for (auto item : v) {
+        wsprintf(Base, L"%p", item.Base);
+        wsprintf(Size, L"%p", item.Size);
+        ModuleList.InsertItem(INDEX, item.Name);
+        ModuleList.SetItemText(INDEX, 1, Base);
+        ModuleList.SetItemText(INDEX, 2, Size);
+        ModuleList.SetItemText(INDEX, 3, item.PATH);
+        INDEX++;
+    }
+    return;
+
 }
 
 

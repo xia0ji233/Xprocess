@@ -191,6 +191,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Utils.h" />
     <ClInclude Include="XModuleDlg.h" />
     <ClInclude Include="Xprocess.h" />
     <ClInclude Include="XprocessDlg.h" />
@@ -205,6 +206,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="XModuleDlg.cpp" />
     <ClCompile Include="Xprocess.cpp" />
     <ClCompile Include="XprocessDlg.cpp" />
